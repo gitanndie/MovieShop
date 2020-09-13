@@ -1,48 +1,89 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useContext } from 'react'
+import { useEffect } from 'react'
+import FiltroPelicula from './FiltroPelicula'
+import DatosUsuario from '../Context/DatosUsuario'
+import VerPelicula from './VerPelicula'
+import { Link } from 'react-router-dom'
 
-export default function VisorPeliculas() {
+export default function VisorPeliculas(props) {
     const [peliculas, setPeliculas] = useState([])
-
+    const [loading, setLoading] = useState(false)
+    const contextUsuario = useContext(DatosUsuario)
     useEffect(() => {
-        fetch ('https://api-movies-users.vercel.app/movies')
-        .then(r => r.json() )
-        .then(movies =>{
-            setPeliculas(movies)
-        })
+        async function obtenerPeliculasIniciales() {
+            let peliculas = await obtenerPeliculas()
+            setPeliculas(peliculas)
+            setLoading(false)
+        }
+        obtenerPeliculasIniciales()
     }, [])
-    
+
+    const obtenerPeliculas = async () => {
+        setLoading(true)
+        let respuesta = await fetch('https://api-movies-users.vercel.app/movies')
+        let peliculas = await respuesta.json()
+        return peliculas
+    }
+
     return (
-        <section>
-            <table border = "1">
+        <>
+            <FiltroPelicula obtenerPeliculas={obtenerPeliculas} setPeliculas={setPeliculas} loading={loading} setLoading={setLoading} />
+            <table border="1" className="table table-bordered">
                 <thead>
                     <tr>
-                    <th>ID</th>
-                    <th>Título</th>
-                    <th>Año</th>
-                    <th>Cover</th>
-                    <th>Descripción</th>
-                    <th>Duración</th>
-                    <th>Calificación</th>
-                    <th>Fuente</th>
-                    <th>Tags</th>
+                        <th>Titulo</th>
+                        <th>Año</th>
+                        <th>Cover</th>
+                        <th>Descripción</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {peliculas.map((peliculas,i) => {
+                    {peliculas.map((pelicula, i) => {
                         return <tr key={i}>
-                            <td>{peliculas.id} </td>
-                            <td>{peliculas.title} </td>
-                            <td>{peliculas.year} </td>
-                            <td><img src={peliculas.cover}/></td>
-                            <td>{peliculas.description} </td>
-                            <td>{peliculas.duration} </td>
-                            <td>{peliculas.contentRating} </td>
-                            <td><a href={peliculas.source} target="_blank">Enlace</a></td>
-                            <td><ul>{peliculas.tags.map(tag => <li>{tag}</li>)}</ul></td>
+                            <td>{pelicula.title}</td>
+                            <td>{pelicula.year}</td>
+                            <td><img src={pelicula.cover} alt={pelicula.title} /></td>
+                            <td>{pelicula.description}</td>
+                            <td>
+                                <Link to={`view/${pelicula.id}`}>Ver</Link>
+                            </td>
                         </tr>
                     })}
                 </tbody>
             </table>
-        </section>
+            {/*}
+            <DatosUsuario.Consumer>
+                {(value) => {
+                    return <div>
+                        <p>Nombre usuario: {value.userName}</p>
+                        <p>Nombre: {value.fullName}</p>
+                        <p>Apellido: {value.lastName}</p>
+                    </div>
+                }}
+            </DatosUsuario.Consumer>
+            {*/}
+            <div>
+                <p>Nombre usuario: {contextUsuario.userName}</p>
+                <p>Nombre: {contextUsuario.fullName}</p>
+                <p>Apellido: {contextUsuario.lastName}</p>
+            </div>
+            <MiniPelicula />
+            <VerPelicula/>
+        </>
     )
+}
+
+function MiniPelicula(props) {
+    return <>
+        <b>Este es un miniComponente </b>
+        <DatosUsuario.Consumer>
+            {value => <>
+                <p>ID: {value.idUser}</p>
+                <ul>
+                    {value.professions !== undefined ? value.professions.map((profession,index) => <li key={index}>{profession}</li>):""}
+                </ul>
+            </>}
+        </DatosUsuario.Consumer>
+    </>
 }
